@@ -11,20 +11,25 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.AlterConfigOp;
 import org.apache.kafka.clients.admin.AlterConsumerGroupOffsetsResult;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.ConfigEntry;
+import org.apache.kafka.clients.admin.CreatePartitionsResult;
 import org.apache.kafka.clients.admin.CreateTopicsOptions;
 import org.apache.kafka.clients.admin.CreateTopicsResult;
+import org.apache.kafka.clients.admin.DeleteTopicsResult;
 import org.apache.kafka.clients.admin.DescribeConfigsOptions;
 import org.apache.kafka.clients.admin.DescribeConfigsResult;
 import org.apache.kafka.clients.admin.DescribeConsumerGroupsResult;
 import org.apache.kafka.clients.admin.DescribeTopicsResult;
+import org.apache.kafka.clients.admin.AlterConfigsResult;
 import org.apache.kafka.clients.admin.ListConsumerGroupOffsetsResult;
 import org.apache.kafka.clients.admin.ListConsumerGroupsResult;
 import org.apache.kafka.clients.admin.ListOffsetsResult;
 import org.apache.kafka.clients.admin.ListTopicsOptions;
 import org.apache.kafka.clients.admin.ListTopicsResult;
+import org.apache.kafka.clients.admin.NewPartitions;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.admin.ConsumerGroupListing;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
@@ -35,6 +40,8 @@ import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.config.TopicConfig;
 import org.apache.kafka.common.errors.GroupIdNotFoundException;
+import org.apache.kafka.common.errors.InvalidTopicException;
+import org.apache.kafka.common.errors.TopicExistsException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -211,6 +218,151 @@ public class KafkaAdminService {
             targetOffsets.forEach((tp, offset) -> offsets.put(tp, new OffsetAndMetadata(offset)));
             AlterConsumerGroupOffsetsResult result = admin.alterConsumerGroupOffsets(groupId, offsets);
             result.all().get(ADMIN_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+        } catch (Exception e) {
+            throw unavailable(e);
+        }
+    }
+
+    /** Descripción completa de los tópicos pedidos (particiones, líder, ISR). */
+    public Map<String, TopicDescription> describeTopics(Collection<String> topicNames) {
+        if (topicNames.isEmpty()) {
+            return Map.of();
+        }
+        try {
+            DescribeTopicsResult result = admin.describeTopics(topicNames);
+            return result.all().get(ADMIN_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+        } catch (Exception e) {
+            throw unavailable(e);
+        }
+    }
+
+    /** Cantidad de brokers del clúster, para validar el replicationFactor. */
+    public int brokerCount() {
+        try {
+            return admin.describeCluster().nodes().get(ADMIN_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS).size();
+        } catch (Exception e) {
+            throw unavailable(e);
+        }
+    }
+
+    /** Una configuración de tópico con su origen ya normalizado al contrato. */
+    public record TopicConfigEntry(String name, String value, String source) {
+    }
+
+    /**
+     * Configuraciones de un tópico. {@code source} es TOPIC, DEFAULT o BROKER
+     * según el ConfigSource que reporta el broker (EP3-03, 5.2).
+     */
+    public List<TopicConfigEntry> topicConfigs(String topic) {
+        ConfigResource resource = new ConfigResource(ConfigResource.Type.TOPIC, topic);
+        try {
+            DescribeConfigsResult result = admin.describeConfigs(List.of(resource), new DescribeConfigsOptions());
+            Config config = result.all().get(ADMIN_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS).get(resource);
+            List<TopicConfigEntry> out = new ArrayList<>();
+            if (config != null) {
+                for (ConfigEntry entry : config.entries()) {
+                    out.add(new TopicConfigEntry(entry.name(),
+                            entry.value() == null ? null : String.valueOf(entry.value()),
+                            sourceOf(entry)));
+                }
+            }
+            return out;
+        } catch (Exception e) {
+            throw unavailable(e);
+        }
+    }
+
+    private String sourceOf(ConfigEntry entry) {
+        return switch (entry.source()) {
+            case DYNAMIC_TOPIC_CONFIG -> "TOPIC";
+            case DEFAULT_CONFIG -> "DEFAULT";
+            default -> "BROKER";
+        };
+    }
+
+    /**
+     * Crea un tópico. {@link TopicExistsException} e {@link InvalidTopicException}
+     * se propagan sin envolver: el servicio los traduce a 409.
+     */
+    public void createTopic(String name, int partitions, int replicationFactor, Map<String, String> configs) {
+        NewTopic topic = new NewTopic(name, partitions, (short) replicationFactor).configs(configs);
+        try {
+            CreateTopicsResult result = admin.createTopics(List.of(topic), new CreateTopicsOptions());
+            result.all().get(ADMIN_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+        } catch (java.util.concurrent.ExecutionException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof TopicExistsException || cause instanceof InvalidTopicException) {
+                throw (KafkaException) cause;
+            }
+            throw unavailable(e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new KafkaUnavailableException("Kafka no esta disponible", e);
+        } catch (KafkaException e) {
+            throw e;
+        } catch (Exception e) {
+            throw unavailable(e);
+        }
+    }
+
+    /** Cambio parcial de configuraciones con incrementalAlterConfigs (SET). */
+    public void updateTopicConfigs(String topic, Map<String, String> values) {
+        ConfigResource resource = new ConfigResource(ConfigResource.Type.TOPIC, topic);
+        List<AlterConfigOp> ops = new ArrayList<>();
+        values.forEach((key, value) -> ops.add(new AlterConfigOp(new ConfigEntry(key, value), AlterConfigOp.OpType.SET)));
+        Map<ConfigResource, Collection<AlterConfigOp>> request = Map.of(resource, ops);
+        try {
+            AlterConfigsResult result = admin.incrementalAlterConfigs(request);
+            result.all().get(ADMIN_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+        } catch (Exception e) {
+            throw unavailable(e);
+        }
+    }
+
+    /** Aumenta las particiones de un tópico (createPartitions). */
+    public void increaseTopicPartitions(String topic, int partitions) {
+        try {
+            CreatePartitionsResult result =
+                    admin.createPartitions(Map.of(topic, NewPartitions.increaseTo(partitions)));
+            result.all().get(ADMIN_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+        } catch (Exception e) {
+            throw unavailable(e);
+        }
+    }
+
+    /** Elimina un tópico. */
+    public void deleteTopic(String topic) {
+        try {
+            DeleteTopicsResult result = admin.deleteTopics(List.of(topic));
+            result.all().get(ADMIN_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+        } catch (Exception e) {
+            throw unavailable(e);
+        }
+    }
+
+    /**
+     * true si algún consumer group con miembros conectados tiene particiones
+     * asignadas del tópico (miembros de grupos vacíos no cuentan).
+     */
+    public boolean topicHasActiveConsumers(String topic) {
+        Set<String> ids = listGroupIds();
+        if (ids.isEmpty()) {
+            return false;
+        }
+        try {
+            DescribeConsumerGroupsResult result = admin.describeConsumerGroups(ids);
+            Map<String, org.apache.kafka.clients.admin.ConsumerGroupDescription> described =
+                    result.all().get(ADMIN_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+            for (org.apache.kafka.clients.admin.ConsumerGroupDescription d : described.values()) {
+                for (var member : d.members()) {
+                    if (member.assignment() != null
+                            && member.assignment().topicPartitions().stream()
+                                    .anyMatch(tp -> tp.topic().equals(topic))) {
+                        return true;
+                    }
+                }
+            }
+            return false;
         } catch (Exception e) {
             throw unavailable(e);
         }

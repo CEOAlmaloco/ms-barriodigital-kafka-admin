@@ -43,6 +43,32 @@ Al arrancar, `SystemTopicsInitializer` crea en Kafka los tópicos declarados en
 - `KafkaAdminService` es el único punto que usa `AdminClient`; ningún
   controlador toca clases de Kafka.
 
+## Tópicos: consulta, alta, configuraciones y baja (EP3-19)
+
+Endpoints bajo `/api/kafka/topics` (EP3-03, secciones 2 a 5):
+
+| Método | Ruta | Éxito |
+|---|---|---|
+| GET | `/api/kafka/topics` | 200, lista con `system` (sin tópicos internos) |
+| GET | `/api/kafka/topics/{name}` | 200, particiones (líder, réplicas, ISR) y configs con `value`, `source` y `editable` |
+| POST | `/api/kafka/topics` | 201 con el detalle |
+| PATCH | `/api/kafka/topics/{name}/configs` | 200 con el detalle; cambio parcial vía `incrementalAlterConfigs` (`SET`) |
+| PATCH | `/api/kafka/topics/{name}/partitions` | 200 con el detalle; solo aumenta, máx. 12 |
+| DELETE | `/api/kafka/topics/{name}` | 204 |
+
+Reglas principales:
+
+- Nombre: `^[A-Za-z0-9._-]{1,249}$`, sin prefijo `__`, sin `.` ni `..`.
+- Alta: `partitions` 1-12, `replicationFactor` 1-3 y ≤ brokers del clúster.
+  409 si ya existe, si termina en `.DLT` o si choca con un existente al
+  cambiar `.` por `_` (revisado contra el listado antes de llamar a Kafka).
+- Configs editables: `retention.ms`, `cleanup.policy`, `min.insync.replicas`,
+  `min.compaction.lag.ms` y `segment.ms`, con los rangos de EP3-03 3.3.
+  En los tópicos del sistema solo `retention.ms` es editable (409 el resto);
+  `message.timestamp.type` nunca es editable. Un valor `null` responde 400.
+- Baja: 409 en tópicos del sistema o si algún consumer group con miembros
+  tiene particiones asignadas del tópico.
+
 ## Consumer groups, lag y reset de offsets (EP3-20)
 
 Endpoints bajo `/api/kafka/consumer-groups` (EP3-03, sección 6):

@@ -68,3 +68,13 @@ barriodigital:
         retention-ms: 1209600000
         min-insync-replicas: 2
         message-timestamp-type: LogAppendTime
+    # Consumer groups del sistema (EP3-03, 6.1). Se listan siempre; si el
+    # broker los borró aparecen con estado DEAD y 0 miembros.
+    groups:
+      report-group:
+        topics:
+          - requests.events
+      audit-group:
+        topics:
+          - requests.events
+          - audit.timeline

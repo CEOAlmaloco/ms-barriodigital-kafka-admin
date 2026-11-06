@@ -2,6 +2,7 @@ package cl.duoc.barriodigital.kafkaadmin;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
  * Arranca kafka-admin.
@@ -9,6 +10,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * Escucha en el puerto 8085, que no es público.
  */
 @SpringBootApplication
+@EnableScheduling
 public class KafkaAdminApplication {
 
     /**

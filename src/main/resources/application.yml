@@ -25,3 +25,46 @@ springdoc:
     path: /v3/api-docs
   swagger-ui:
     path: /swagger-ui.html
+
+barriodigital:
+  kafka:
+    # Reintento de la creación inicial de tópicos cuando Kafka no responde al arrancar.
+    topics-init:
+      retry-ms: 10000
+    # Tópicos del sistema (EP3-01, K3). Solo se crean los que falten; los
+    # existentes con configs distintas solo generan WARN, nunca se modifican.
+    topics:
+      "[requests.events]":
+        partitions: 3
+        replication-factor: 3
+        cleanup-policy: delete
+        retention-ms: 604800000
+        min-insync-replicas: 2
+      "[audit.timeline]":
+        partitions: 3
+        replication-factor: 3
+        cleanup-policy: compact,delete
+        retention-ms: 2592000000
+        min-insync-replicas: 2
+        min-compaction-lag-ms: 604800000
+      "[requests.events.report.DLT]":
+        partitions: 3
+        replication-factor: 3
+        cleanup-policy: delete
+        retention-ms: 1209600000
+        min-insync-replicas: 2
+        message-timestamp-type: LogAppendTime
+      "[requests.events.audit.DLT]":
+        partitions: 3
+        replication-factor: 3
+        cleanup-policy: delete
+        retention-ms: 1209600000
+        min-insync-replicas: 2
+        message-timestamp-type: LogAppendTime
+      "[audit.timeline.audit.DLT]":
+        partitions: 3
+        replication-factor: 3
+        cleanup-policy: delete
+        retention-ms: 1209600000
+        min-insync-replicas: 2
+        message-timestamp-type: LogAppendTime

@@ -1,6 +1,7 @@
 package cl.duoc.barriodigital.kafkaadmin.web;
 
 import cl.duoc.barriodigital.kafkaadmin.service.ConsumerGroupService;
+import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -34,7 +35,10 @@ public class ConsumerGroupController {
 
     /** POST /api/kafka/consumer-groups/{groupId}/offsets/reset — dry run o real. */
     @PostMapping("/{groupId}/offsets/reset")
-    public ResetOffsetsResponse reset(@PathVariable String groupId, @RequestBody ResetOffsetsRequest request) {
+    public ResetOffsetsResponse reset(
+            @PathVariable String groupId,
+            @Valid @RequestBody ResetOffsetsRequest request
+    ) {
         return consumerGroupService.resetOffsets(groupId, request);
     }
 }

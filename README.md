@@ -24,8 +24,9 @@ Con los brokers prendidos y `KAFKA_BOOTSTRAP_SERVERS` correcto, la respuesta es 
 | Variable | Qué va |
 |---|---|
 | `KAFKA_BOOTSTRAP_SERVERS` | Brokers separados por coma. En local, `localhost:9092`. En EC2, DNS o IP privada de EC2-Kafka. |
+| `INTERNAL_TOKEN` | Valor del header `X-Internal-Token`. Sin él, `/api/kafka/**` responde 401. |
 
-Este servicio no ve el JWT: lo llama el BFF.
+Este servicio no ve el JWT: lo llama el BFF. Tras el token interno exige rol Admin en `X-User-Roles` (403 si falta).
 
 ## Tópicos del sistema (EP3-18)
 
@@ -161,3 +162,12 @@ para lo que la búsqueda completa no encontró. Antes de cada envío, si quedan
 menos de 15 s del tope, el mensaje no se envía y queda `NO_INTENTADO`. Un
 envío sin confirmación queda `FALLIDO` con motivo `sin confirmacion` y detiene
 la operación.
+
+## Validación, seguridad, Swagger y tests (EP3-22)
+
+- DTOs con `jakarta.validation` (`@NotNull` en `dryRun` Boolean, rangos de
+  particiones/réplicas, formato de nombre). Orden de errores: 401 → 403 → 400 →
+  404 → 409. Kafka sin respuesta a tiempo: 503 con el mismo cuerpo.
+- `AdminClient` con `default.api.timeout.ms=5000`.
+- Swagger: `/swagger-ui.html` y `/v3/api-docs` con ejemplos por endpoint.
+- `.\mvnw.cmd test` corre sin un Kafka real (AdminClient mockeado).

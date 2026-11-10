@@ -52,6 +52,7 @@ public class DefaultKafkaRecordClient implements KafkaRecordClient {
             List<TopicPartition> assigned = new ArrayList<>();
             fromOffsetsByPartition.keySet().forEach(p -> assigned.add(new TopicPartition(topic, p)));
             consumer.assign(assigned);
+            Map<TopicPartition, Long> endOffsets = consumer.endOffsets(assigned);
             Map<Integer, Integer> remaining = new HashMap<>();
             for (Map.Entry<Integer, Long> entry : fromOffsetsByPartition.entrySet()) {
                 TopicPartition tp = new TopicPartition(topic, entry.getKey());
@@ -61,6 +62,16 @@ public class DefaultKafkaRecordClient implements KafkaRecordClient {
             List<ConsumedRecord> out = new ArrayList<>();
             Instant deadline = Instant.now().plus(timeout);
             while (Instant.now().isBefore(deadline) && remaining.values().stream().anyMatch(n -> n > 0)) {
+                for (TopicPartition tp : assigned) {
+                    Integer left = remaining.get(tp.partition());
+                    long end = endOffsets.getOrDefault(tp, 0L);
+                    if (left != null && left > 0 && consumer.position(tp) >= end) {
+                        remaining.put(tp.partition(), 0);
+                    }
+                }
+                if (remaining.values().stream().noneMatch(n -> n > 0)) {
+                    break;
+                }
                 long millisLeft = Duration.between(Instant.now(), deadline).toMillis();
                 if (millisLeft <= 0) {
                     break;

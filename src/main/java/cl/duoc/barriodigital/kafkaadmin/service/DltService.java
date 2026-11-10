@@ -136,8 +136,6 @@ public class DltService {
                 nextOffset = null;
             } else if (page.isEmpty()) {
                 nextOffset = start;
-            } else if (page.size() < pageSize) {
-                nextOffset = null;
             } else {
                 long candidate = page.get(page.size() - 1).offset() + 1;
                 nextOffset = candidate >= end ? null : candidate;
@@ -243,8 +241,6 @@ public class DltService {
         Map<TopicPartition, Long> earliest = kafkaAdminService.earliestOffsets(topicPartitions(dlt, partitions));
         Map<TopicPartition, Long> latest = kafkaAdminService.latestOffsets(topicPartitions(dlt, partitions));
 
-        Map<Integer, Long> minNeeded = new HashMap<>();
-        Map<Integer, Long> maxNeeded = new HashMap<>();
         for (OffsetRef ref : offsets) {
             if (ref.partition() == null || ref.offset() == null) {
                 throw badRequest("Cada offset requiere partition y offset");
@@ -252,38 +248,38 @@ public class DltService {
             if (!partitions.contains(ref.partition())) {
                 throw badRequest("La particion no existe");
             }
-            minNeeded.merge(ref.partition(), ref.offset(), Math::min);
-            maxNeeded.merge(ref.partition(), ref.offset(), Math::max);
         }
 
-        Map<Integer, Long> starts = new LinkedHashMap<>();
-        int limitPerPartition = DEFAULT_LIMIT;
-        for (Map.Entry<Integer, Long> entry : minNeeded.entrySet()) {
-            TopicPartition tp = new TopicPartition(dlt, entry.getKey());
+        Instant searchDeadline = clock.instant().plus(SEARCH_TIMEOUT);
+        Map<String, ConsumedRecord> found = new HashMap<>();
+        Set<String> notReached = new java.util.HashSet<>();
+        for (OffsetRef ref : offsets) {
+            String key = ref.partition() + ":" + ref.offset();
+            TopicPartition tp = new TopicPartition(dlt, ref.partition());
             long earliestOffset = earliest.getOrDefault(tp, 0L);
             long latestOffset = latest.getOrDefault(tp, 0L);
-            long start = Math.max(entry.getValue(), earliestOffset);
-            if (start < latestOffset) {
-                starts.put(entry.getKey(), start);
-                long span = maxNeeded.get(entry.getKey()) - start + 1;
-                limitPerPartition = Math.max(
-                        limitPerPartition,
-                        (int) Math.min(MAX_LIMIT, Math.max(span, 1))
-                );
+            if (ref.offset() < earliestOffset || ref.offset() >= latestOffset) {
+                continue;
             }
-        }
-
-        Map<String, ConsumedRecord> found = new HashMap<>();
-        if (!starts.isEmpty()) {
-            List<ConsumedRecord> records = recordClient.readAssigned(dlt, starts, limitPerPartition, READ_TIMEOUT);
+            Duration budget = Duration.between(clock.instant(), searchDeadline);
+            if (budget.isNegative() || budget.isZero()) {
+                notReached.add(key);
+                continue;
+            }
+            List<ConsumedRecord> records = recordClient.readAssigned(
+                    dlt, Map.of(ref.partition(), ref.offset()), 1, budget);
             for (ConsumedRecord record : records) {
-                found.put(record.partition() + ":" + record.offset(), record);
+                if (record.partition() == ref.partition() && record.offset() == ref.offset()) {
+                    found.put(key, record);
+                }
+            }
+            if (!found.containsKey(key) && !clock.instant().isBefore(searchDeadline)) {
+                notReached.add(key);
             }
         }
 
         // Si el mismo eventId aparece en varios offsets pedidos, solo la ocurrencia más reciente se reenvía.
         Map<String, OffsetRef> newestByEventId = new LinkedHashMap<>();
-        Map<String, ConsumedRecord> recordByKey = new HashMap<>();
         for (OffsetRef ref : offsets) {
             ConsumedRecord record = found.get(ref.partition() + ":" + ref.offset());
             if (record == null) {
@@ -296,7 +292,6 @@ public class DltService {
             OffsetRef previous = newestByEventId.get(eventId);
             if (previous == null || isNewer(record, found.get(previous.partition() + ":" + previous.offset()))) {
                 newestByEventId.put(eventId, ref);
-                recordByKey.put(eventId, record);
             }
         }
 
@@ -307,8 +302,13 @@ public class DltService {
             item.offset = ref.offset();
             ConsumedRecord record = found.get(ref.partition() + ":" + ref.offset());
             if (record == null) {
-                item.status = "OMITIDO";
-                item.reason = "offset inexistente";
+                if (notReached.contains(ref.partition() + ":" + ref.offset())) {
+                    item.status = "NO_INTENTADO";
+                    item.reason = "busqueda agotada";
+                } else {
+                    item.status = "OMITIDO";
+                    item.reason = "offset inexistente";
+                }
                 items.add(item);
                 continue;
             }

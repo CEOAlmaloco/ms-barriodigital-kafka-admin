@@ -102,7 +102,7 @@ class DltServiceTest {
     void listadoAjustaFromOffsetAnteriorALaRetencionYDevuelveMensajes() {
         TopicPartition tp = new TopicPartition(DLT, 1);
         when(kafkaAdminService.earliestOffsets(any())).thenReturn(Map.of(tp, 100L));
-        when(kafkaAdminService.latestOffsets(any())).thenReturn(Map.of(tp, 102L));
+        when(kafkaAdminService.latestOffsets(any())).thenReturn(Map.of(tp, 101L));
         when(recordClient.readAssigned(eq(DLT), anyMap(), eq(20), any()))
                 .thenReturn(List.of(record(1, 100L, "evt-1", "requests.events", 1)));
 
@@ -118,6 +118,22 @@ class DltServiceTest {
         assertThat(view.partitions().get(0).messages().get(0).exceptionClass())
                 .isEqualTo("org.springframework.kafka.listener.ListenerExecutionFailedException");
         assertThat(view.partitions().get(0).nextOffset()).isNull();
+    }
+
+    @Test
+    void listadoDejaNextOffsetSiLaPaginaNoLlegaAlFinal() {
+        TopicPartition tp = new TopicPartition(DLT, 0);
+        when(kafkaAdminService.earliestOffsets(any())).thenReturn(Map.of(tp, 0L));
+        when(kafkaAdminService.latestOffsets(any())).thenReturn(Map.of(tp, 40L));
+        when(recordClient.readAssigned(eq(DLT), anyMap(), eq(2), any()))
+                .thenReturn(List.of(
+                        record(0, 10L, "evt-a", "requests.events", 0),
+                        record(0, 11L, "evt-b", "requests.events", 0)));
+
+        DltMessagesView view = service.listMessages(DLT, 0, null, 2);
+
+        assertThat(view.partitions()).hasSize(1);
+        assertThat(view.partitions().get(0).nextOffset()).isEqualTo(12L);
     }
 
     @Test

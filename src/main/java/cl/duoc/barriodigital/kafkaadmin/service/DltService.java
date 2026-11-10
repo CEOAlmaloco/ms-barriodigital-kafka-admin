@@ -2,6 +2,8 @@ package cl.duoc.barriodigital.kafkaadmin.service;
 
 import cl.duoc.barriodigital.kafkaadmin.config.KafkaTopicsProperties;
 import cl.duoc.barriodigital.kafkaadmin.domain.KafkaUnavailableException;
+import cl.duoc.barriodigital.kafkaadmin.messaging.AuditEventFactory;
+import cl.duoc.barriodigital.kafkaadmin.messaging.AuditPublisher;
 import cl.duoc.barriodigital.kafkaadmin.service.KafkaRecordClient.ConsumedRecord;
 import cl.duoc.barriodigital.kafkaadmin.web.DltMessageView;
 import cl.duoc.barriodigital.kafkaadmin.web.DltMessagesView;
@@ -67,19 +69,25 @@ public class DltService {
     private final KafkaTopicsProperties topicsProperties;
     private final ObjectMapper objectMapper;
     private final Clock clock;
+    private final AuditEventFactory auditEvents;
+    private final AuditPublisher auditPublisher;
 
     public DltService(
             KafkaAdminService kafkaAdminService,
             KafkaRecordClient recordClient,
             KafkaTopicsProperties topicsProperties,
             ObjectMapper objectMapper,
-            Clock clock
+            Clock clock,
+            AuditEventFactory auditEvents,
+            AuditPublisher auditPublisher
     ) {
         this.kafkaAdminService = kafkaAdminService;
         this.recordClient = recordClient;
         this.topicsProperties = topicsProperties;
         this.objectMapper = objectMapper;
         this.clock = clock;
+        this.auditEvents = auditEvents;
+        this.auditPublisher = auditPublisher;
     }
 
     /** GET /api/kafka/dlt/{name}/messages */
@@ -234,7 +242,22 @@ public class DltService {
         int skipped = (int) results.stream().filter(r -> "OMITIDO".equals(r.status())).count();
         int failed = (int) results.stream().filter(r -> "FALLIDO".equals(r.status())).count();
         int notAttempted = (int) results.stream().filter(r -> "NO_INTENTADO".equals(r.status())).count();
-        return new DltReplayResponse(dlt, targetTopic, resent, skipped, failed, notAttempted, results);
+        DltReplayResponse response = new DltReplayResponse(
+                dlt, targetTopic, resent, skipped, failed, notAttempted, results);
+        List<Map<String, Object>> afterResults = results.stream().map(r -> {
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("eventId", r.eventId());
+            row.put("partition", r.partition());
+            row.put("offset", r.offset());
+            row.put("status", r.status());
+            row.put("reason", r.reason());
+            return row;
+        }).toList();
+        Map<String, Object> after = new LinkedHashMap<>();
+        after.put("targetTopic", targetTopic);
+        after.put("results", afterResults);
+        auditPublisher.publish(auditEvents.create("topic", dlt, "dlt-replayed", null, after));
+        return response;
     }
 
     private List<ReplayItem> resolveByOffsets(String dlt, List<OffsetRef> offsets, List<Integer> partitions) {

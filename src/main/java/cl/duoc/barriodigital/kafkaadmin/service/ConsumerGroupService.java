@@ -2,6 +2,8 @@ package cl.duoc.barriodigital.kafkaadmin.service;
 
 import cl.duoc.barriodigital.kafkaadmin.config.KafkaGroupsProperties;
 import cl.duoc.barriodigital.kafkaadmin.config.KafkaGroupsProperties.GroupSpec;
+import cl.duoc.barriodigital.kafkaadmin.messaging.AuditEventFactory;
+import cl.duoc.barriodigital.kafkaadmin.messaging.AuditPublisher;
 import cl.duoc.barriodigital.kafkaadmin.web.GroupDetailView;
 import cl.duoc.barriodigital.kafkaadmin.web.GroupDetailView.GroupTopicView;
 import cl.duoc.barriodigital.kafkaadmin.web.GroupDetailView.PartitionLagView;
@@ -36,10 +38,19 @@ public class ConsumerGroupService {
 
     private final KafkaAdminService kafkaAdminService;
     private final KafkaGroupsProperties groupsProperties;
+    private final AuditEventFactory auditEvents;
+    private final AuditPublisher auditPublisher;
 
-    public ConsumerGroupService(KafkaAdminService kafkaAdminService, KafkaGroupsProperties groupsProperties) {
+    public ConsumerGroupService(
+            KafkaAdminService kafkaAdminService,
+            KafkaGroupsProperties groupsProperties,
+            AuditEventFactory auditEvents,
+            AuditPublisher auditPublisher
+    ) {
         this.kafkaAdminService = kafkaAdminService;
         this.groupsProperties = groupsProperties;
+        this.auditEvents = auditEvents;
+        this.auditPublisher = auditPublisher;
     }
 
     /** Listado de grupos: los del broker más los del sistema siempre presentes. */
@@ -161,6 +172,25 @@ public class ConsumerGroupService {
 
         if (!request.dryRun()) {
             kafkaAdminService.alterGroupOffsets(groupId, toWrite);
+            Map<String, Object> before = new LinkedHashMap<>();
+            Map<String, Object> after = new LinkedHashMap<>();
+            List<Map<String, Object>> beforePartitions = new ArrayList<>();
+            List<Map<String, Object>> afterPartitions = new ArrayList<>();
+            for (PartitionResetView row : rows) {
+                Map<String, Object> beforeRow = new LinkedHashMap<>();
+                beforeRow.put("partition", row.partition());
+                beforeRow.put("offset", row.currentOffset());
+                beforePartitions.add(beforeRow);
+                Map<String, Object> afterRow = new LinkedHashMap<>();
+                afterRow.put("partition", row.partition());
+                afterRow.put("offset", row.targetOffset());
+                afterPartitions.add(afterRow);
+            }
+            before.put("partitions", beforePartitions);
+            after.put("topic", topic);
+            after.put("strategy", strategy.name());
+            after.put("partitions", afterPartitions);
+            auditPublisher.publish(auditEvents.create("consumer-group", groupId, "offsets-reset", before, after));
         }
         return new ResetOffsetsResponse(groupId, topic, strategy.name(), request.dryRun(), rows);
     }

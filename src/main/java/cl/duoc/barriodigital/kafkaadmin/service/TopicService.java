@@ -1,6 +1,8 @@
 package cl.duoc.barriodigital.kafkaadmin.service;
 
 import cl.duoc.barriodigital.kafkaadmin.config.KafkaTopicsProperties;
+import cl.duoc.barriodigital.kafkaadmin.messaging.AuditEventFactory;
+import cl.duoc.barriodigital.kafkaadmin.messaging.AuditPublisher;
 import cl.duoc.barriodigital.kafkaadmin.web.CreateTopicRequest;
 import cl.duoc.barriodigital.kafkaadmin.web.TopicDetailView;
 import cl.duoc.barriodigital.kafkaadmin.web.TopicDetailView.ConfigView;
@@ -43,10 +45,19 @@ public class TopicService {
 
     private final KafkaAdminService kafkaAdminService;
     private final KafkaTopicsProperties topicsProperties;
+    private final AuditEventFactory auditEvents;
+    private final AuditPublisher auditPublisher;
 
-    public TopicService(KafkaAdminService kafkaAdminService, KafkaTopicsProperties topicsProperties) {
+    public TopicService(
+            KafkaAdminService kafkaAdminService,
+            KafkaTopicsProperties topicsProperties,
+            AuditEventFactory auditEvents,
+            AuditPublisher auditPublisher
+    ) {
         this.kafkaAdminService = kafkaAdminService;
         this.topicsProperties = topicsProperties;
+        this.auditEvents = auditEvents;
+        this.auditPublisher = auditPublisher;
     }
 
     /** GET /api/kafka/topics — lista con bandera system, sin tópicos internos. */
@@ -104,7 +115,13 @@ public class TopicService {
         } catch (TopicExistsException | InvalidTopicException e) {
             throw conflict("El nombre no esta disponible");
         }
-        return describeTopic(name);
+        TopicDetailView created = describeTopic(name);
+        Map<String, Object> after = new LinkedHashMap<>();
+        after.put("partitions", created.partitions().size());
+        after.put("replicationFactor", replicationFactorFromDetail(created));
+        after.put("configs", configsSnapshot(created));
+        auditPublisher.publish(auditEvents.create("topic", name, "created", null, after));
+        return created;
     }
 
     /** PATCH /api/kafka/topics/{name}/configs — cambio parcial con SET. */
@@ -132,8 +149,11 @@ public class TopicService {
             validateConfigValue(key, value, system, name, replicationFactor);
             validated.put(key, value);
         }
+        Map<String, String> before = previousConfigValues(name, validated.keySet());
         kafkaAdminService.updateTopicConfigs(name, validated);
-        return describeTopic(name);
+        TopicDetailView updated = describeTopic(name);
+        auditPublisher.publish(auditEvents.create("topic", name, "updated", before, new LinkedHashMap<>(validated)));
+        return updated;
     }
 
     /** PATCH /api/kafka/topics/{name}/partitions — solo aumenta, nunca en el sistema. */
@@ -148,21 +168,56 @@ public class TopicService {
                 || request.partitions() <= current || request.partitions() > MAX_PARTITIONS) {
             throw badRequest("partitions debe ser mayor que " + current + " y no superar 12");
         }
+        Map<String, Object> before = Map.of("partitions", current);
         kafkaAdminService.increaseTopicPartitions(name, request.partitions());
-        return describeTopic(name);
+        TopicDetailView updated = describeTopic(name);
+        Map<String, Object> after = Map.of("partitions", updated.partitions().size());
+        auditPublisher.publish(auditEvents.create("topic", name, "updated", before, after));
+        return updated;
     }
 
     /** DELETE /api/kafka/topics/{name} — 204, con las restricciones del contrato. */
     public void deleteTopic(String name) {
         validateName(name);
-        requireTopic(name);
+        TopicDescription description = requireTopic(name);
         if (isSystem(name)) {
             throw conflict("El topico es del sistema y no se puede eliminar");
         }
         if (kafkaAdminService.topicHasActiveConsumers(name)) {
             throw conflict("El topico tiene consumidores activos");
         }
+        TopicDetailView beforeDetail = buildDetail(name, description);
+        Map<String, Object> before = new LinkedHashMap<>();
+        before.put("partitions", beforeDetail.partitions().size());
+        before.put("replicationFactor", replicationFactorFromDetail(beforeDetail));
+        before.put("configs", configsSnapshot(beforeDetail));
         kafkaAdminService.deleteTopic(name);
+        auditPublisher.publish(auditEvents.create("topic", name, "deleted", before, null));
+    }
+
+    private Map<String, String> previousConfigValues(String name, Set<String> keys) {
+        Map<String, String> before = new LinkedHashMap<>();
+        for (KafkaAdminService.TopicConfigEntry entry : kafkaAdminService.topicConfigs(name)) {
+            if (keys.contains(entry.name())) {
+                before.put(entry.name(), entry.value());
+            }
+        }
+        return before;
+    }
+
+    private static Map<String, String> configsSnapshot(TopicDetailView detail) {
+        Map<String, String> configs = new LinkedHashMap<>();
+        for (ConfigView config : detail.configs()) {
+            configs.put(config.name(), config.value());
+        }
+        return configs;
+    }
+
+    private static int replicationFactorFromDetail(TopicDetailView detail) {
+        if (detail.partitions().isEmpty()) {
+            return 0;
+        }
+        return detail.partitions().get(0).replicas().size();
     }
 
     private TopicDetailView buildDetail(String name, TopicDescription description) {

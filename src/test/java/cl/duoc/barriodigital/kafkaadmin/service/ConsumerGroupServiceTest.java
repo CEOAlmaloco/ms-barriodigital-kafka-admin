@@ -13,6 +13,8 @@ import static org.mockito.Mockito.when;
 
 import cl.duoc.barriodigital.kafkaadmin.config.KafkaGroupsProperties;
 import cl.duoc.barriodigital.kafkaadmin.config.KafkaGroupsProperties.GroupSpec;
+import cl.duoc.barriodigital.kafkaadmin.messaging.AuditEventFactory;
+import cl.duoc.barriodigital.kafkaadmin.messaging.AuditPublisher;
 import cl.duoc.barriodigital.kafkaadmin.web.GroupDetailView;
 import cl.duoc.barriodigital.kafkaadmin.web.GroupSummaryView;
 import cl.duoc.barriodigital.kafkaadmin.web.ResetOffsetsRequest;
@@ -40,6 +42,12 @@ class ConsumerGroupServiceTest {
     @Mock
     private KafkaAdminService kafkaAdminService;
 
+    @Mock
+    private AuditEventFactory auditEvents;
+
+    @Mock
+    private AuditPublisher auditPublisher;
+
     private KafkaGroupsProperties groupsProperties;
     private ConsumerGroupService service;
 
@@ -52,7 +60,7 @@ class ConsumerGroupServiceTest {
         audit.setTopics(List.of("requests.events", "audit.timeline"));
         groups.put("audit-group", audit);
         groupsProperties.setGroups(groups);
-        service = new ConsumerGroupService(kafkaAdminService, groupsProperties);
+        service = new ConsumerGroupService(kafkaAdminService, groupsProperties, auditEvents, auditPublisher);
     }
 
     private GroupSpec groupSpec(String... topics) {
@@ -351,6 +359,7 @@ class ConsumerGroupServiceTest {
         assertThat(out.partitions().get(0).targetOffset()).isEqualTo(10L);
         assertThat(out.partitions().get(0).lagAfter()).isEqualTo(110L);
         verify(kafkaAdminService, never()).alterGroupOffsets(anyString(), any());
+        verify(auditPublisher, never()).publish(any());
     }
 
     @Test
@@ -365,12 +374,15 @@ class ConsumerGroupServiceTest {
         when(kafkaAdminService.earliestOffsets(anyCollection())).thenReturn(Map.of(
                 new TopicPartition("requests.events", 0), 10L,
                 new TopicPartition("requests.events", 1), 5L));
+        when(auditEvents.create(anyString(), anyString(), anyString(), any(), any()))
+                .thenReturn(null);
 
         ResetOffsetsResponse out = service.resetOffsets("report-group", pedido("requests.events", "earliest", null, false));
 
         assertThat(out.dryRun()).isFalse();
         assertThat(out.strategy()).isEqualTo("EARLIEST");
         verify(kafkaAdminService).alterGroupOffsets(eq("report-group"), any());
+        verify(auditPublisher).publish(any());
     }
 
     @Test

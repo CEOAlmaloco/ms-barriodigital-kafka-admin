@@ -15,6 +15,8 @@ import static org.mockito.Mockito.when;
 import cl.duoc.barriodigital.kafkaadmin.config.KafkaTopicsProperties;
 import cl.duoc.barriodigital.kafkaadmin.config.KafkaTopicsProperties.TopicSpec;
 import cl.duoc.barriodigital.kafkaadmin.domain.KafkaUnavailableException;
+import cl.duoc.barriodigital.kafkaadmin.messaging.AuditEventFactory;
+import cl.duoc.barriodigital.kafkaadmin.messaging.AuditPublisher;
 import cl.duoc.barriodigital.kafkaadmin.service.KafkaRecordClient.ConsumedRecord;
 import cl.duoc.barriodigital.kafkaadmin.web.DltMessagesView;
 import cl.duoc.barriodigital.kafkaadmin.web.DltReplayRequest;
@@ -59,6 +61,12 @@ class DltServiceTest {
     @Mock
     private KafkaRecordClient recordClient;
 
+    @Mock
+    private AuditEventFactory auditEvents;
+
+    @Mock
+    private AuditPublisher auditPublisher;
+
     private DltService service;
 
     @BeforeEach
@@ -75,7 +83,9 @@ class DltServiceTest {
                 recordClient,
                 topics,
                 new ObjectMapper(),
-                Clock.fixed(NOW, ZoneOffset.UTC)
+                Clock.fixed(NOW, ZoneOffset.UTC),
+                auditEvents,
+                auditPublisher
         );
         when(kafkaAdminService.isAvailable()).thenReturn(true);
         when(kafkaAdminService.describeTopics(any())).thenReturn(Map.of(DLT, topic(DLT, 3)));

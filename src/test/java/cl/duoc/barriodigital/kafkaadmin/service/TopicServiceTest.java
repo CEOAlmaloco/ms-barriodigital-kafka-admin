@@ -16,6 +16,8 @@ import static org.mockito.Mockito.when;
 
 import cl.duoc.barriodigital.kafkaadmin.config.KafkaTopicsProperties;
 import cl.duoc.barriodigital.kafkaadmin.config.KafkaTopicsProperties.TopicSpec;
+import cl.duoc.barriodigital.kafkaadmin.messaging.AuditEventFactory;
+import cl.duoc.barriodigital.kafkaadmin.messaging.AuditPublisher;
 import cl.duoc.barriodigital.kafkaadmin.web.CreateTopicRequest;
 import cl.duoc.barriodigital.kafkaadmin.web.TopicDetailView;
 import cl.duoc.barriodigital.kafkaadmin.web.UpdatePartitionsRequest;
@@ -43,6 +45,12 @@ class TopicServiceTest {
     @Mock
     private KafkaAdminService kafkaAdminService;
 
+    @Mock
+    private AuditEventFactory auditEvents;
+
+    @Mock
+    private AuditPublisher auditPublisher;
+
     private TopicService service;
     private KafkaTopicsProperties properties;
 
@@ -53,7 +61,9 @@ class TopicServiceTest {
         topics.put("requests.events", spec());
         topics.put("requests.events.report.DLT", spec());
         properties.setTopics(topics);
-        service = new TopicService(kafkaAdminService, properties);
+        service = new TopicService(kafkaAdminService, properties, auditEvents, auditPublisher);
+        lenient().when(auditEvents.create(anyString(), anyString(), anyString(), any(), any()))
+                .thenAnswer(inv -> null);
 
         lenient().when(kafkaAdminService.listTopicNames()).thenReturn(Set.of("requests.events", "requests.events.report.DLT"));
         lenient().when(kafkaAdminService.brokerCount()).thenReturn(3);

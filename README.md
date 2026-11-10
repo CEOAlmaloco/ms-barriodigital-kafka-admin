@@ -163,6 +163,15 @@ menos de 15 s del tope, el mensaje no se envía y queda `NO_INTENTADO`. Un
 envío sin confirmación queda `FALLIDO` con motivo `sin confirmacion` y detiene
 la operación.
 
+## Auditoría en audit.timeline (EP3-23)
+
+Tras una operación exitosa (alta/cambio/baja de tópico, reset real de offsets,
+replay de DLT), kafka-admin encola un evento en `audit.timeline` (productor
+`acks=all` + idempotencia, un hilo, cola 1000). El `dryRun` no publica. Si Kafka
+falla o el servicio se apaga con eventos pendientes, queda
+`ERROR evento-auditoria-no-publicado` con el JSON del evento. Actor desde
+`X-User-Id|Name|Roles` y `X-Source-Ip`.
+
 ## Validación, seguridad, Swagger y tests (EP3-22)
 
 - DTOs con `jakarta.validation` (`@NotNull` en `dryRun` Boolean, rangos de

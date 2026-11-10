@@ -110,3 +110,54 @@ En una ventana de mantenimiento:
 2. Ejecutar el reset con `"dryRun": true` y revisar los offsets resultantes.
 3. Ejecutarlo con `"dryRun": false`.
 4. Levantar el consumidor y seguir el lag en Kafka UI hasta que llegue a 0.
+
+## DLT: listado y replay selectivo (EP3-21)
+
+Endpoints bajo `/api/kafka/dlt` (EP3-03, sección 7). Solo aceptan las DLT del
+sistema (`*.DLT` de `barriodigital.kafka.topics`); cualquier otro nombre responde
+400.
+
+| Método | Ruta | Éxito |
+|---|---|---|
+| GET | `/api/kafka/dlt/{name}/messages` | 200, mensajes por partición |
+| POST | `/api/kafka/dlt/{name}/replay` | 200 con el estado de cada mensaje |
+
+### Listado
+
+Lee con un consumidor asignado a las particiones, **sin** `group.id` ni offsets
+confirmados, con tope de 5 s. Cada mensaje incluye `key`, `eventId`, headers de
+diagnóstico (excepción, causa, mensaje, tópico/partición/offset/grupo de origen)
+y dos fechas: llegada a la DLT y `kafka_dlt-original-timestamp`. Sin stacktrace.
+
+Paginación por partición: `partition`, `fromOffset` (exige `partition`) y
+`limit` (por partición, 20 por defecto, máx. 100). Un `fromOffset` anterior a
+la retención se ajusta al primer offset disponible. La respuesta trae
+`nextOffset` por partición.
+
+### Replay
+
+Cuerpo: `offsets` (lista de `{partition, offset}`) **o** `eventIds`, uno de los
+dos y nunca ambos (400). Máximo 100. Los mensajes sin `eventId` solo se eligen
+por offset. Un `eventId` repetido en la DLT se reenvía una sola vez (la
+ocurrencia más reciente).
+
+Publicación:
+
+- va al tópico original, a la partición de `kafka_dlt-original-partition`, con
+  la key y el valor originales y la hora actual como timestamp;
+- quita los headers `kafka_dlt-*` y agrega `x-replayed-from-dlt` y
+  `x-replayed-at`;
+- espera la confirmación de cada mensaje antes de seguir;
+- publica en orden de partición y offset, y se detiene ante la primera falla.
+
+La respuesta 200 trae el estado de cada mensaje (`REENVIADO`, `OMITIDO`,
+`FALLIDO`, `NO_INTENTADO`), aunque haya fallidos. 503 si no hay ningún broker
+disponible, antes de intentar nada.
+
+Tope de 23 s para toda la operación (menor que el timeout de 25 s del BFF). Al
+agotarse, lo pendiente queda `NO_INTENTADO`. Un `eventId` que no se alcanzó a
+buscar queda `NO_INTENTADO` con motivo `busqueda agotada`; `OMITIDO` queda solo
+para lo que la búsqueda completa no encontró. Antes de cada envío, si quedan
+menos de 15 s del tope, el mensaje no se envía y queda `NO_INTENTADO`. Un
+envío sin confirmación queda `FALLIDO` con motivo `sin confirmacion` y detiene
+la operación.

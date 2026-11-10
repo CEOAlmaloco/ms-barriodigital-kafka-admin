@@ -1,6 +1,7 @@
 package cl.duoc.barriodigital.kafkaadmin.web;
 
 import cl.duoc.barriodigital.kafkaadmin.service.DltService;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -33,7 +34,10 @@ public class DltController {
 
     /** POST /api/kafka/dlt/{name}/replay — reenvío selectivo al tópico original. */
     @PostMapping("/{name}/replay")
-    public DltReplayResponse replay(@PathVariable String name, @RequestBody DltReplayRequest request) {
+    public DltReplayResponse replay(
+            @PathVariable String name,
+            @Valid @RequestBody DltReplayRequest request
+    ) {
         return dltService.replay(name, request);
     }
 }

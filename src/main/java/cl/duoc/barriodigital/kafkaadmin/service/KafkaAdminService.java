@@ -55,7 +55,8 @@ public class KafkaAdminService {
 
     private static final Logger log = LoggerFactory.getLogger(KafkaAdminService.class);
 
-    private static final Duration ADMIN_TIMEOUT = Duration.ofSeconds(15);
+    /** Alineado con {@code default.api.timeout.ms=5s} (EP3-03, 8). */
+    private static final Duration ADMIN_TIMEOUT = Duration.ofSeconds(5);
     private static final Duration PING_TIMEOUT = Duration.ofSeconds(3);
 
     private final AdminClient admin;

@@ -27,6 +27,9 @@ springdoc:
     path: /swagger-ui.html
 
 barriodigital:
+  security:
+    # Token compartido con el BFF. Sin él, /api/kafka/** responde 401.
+    internal-token: ${INTERNAL_TOKEN:}
   kafka:
     # Reintento de la creación inicial de tópicos cuando Kafka no responde al arrancar.
     topics-init:

@@ -2,13 +2,20 @@ package cl.duoc.barriodigital.kafkaadmin;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import cl.duoc.barriodigital.kafkaadmin.config.InternalTokenProperties;
 import cl.duoc.barriodigital.kafkaadmin.config.KafkaGroupsProperties;
 import cl.duoc.barriodigital.kafkaadmin.config.KafkaTopicsProperties;
+import cl.duoc.barriodigital.kafkaadmin.service.KafkaRecordClient;
+import org.apache.kafka.clients.admin.AdminClient;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 
-@SpringBootTest
+@SpringBootTest(properties = {
+        "barriodigital.security.internal-token=test-token",
+        "management.health.kafka.enabled=false"
+})
 class KafkaAdminApplicationTest {
 
     @Autowired
@@ -17,8 +24,18 @@ class KafkaAdminApplicationTest {
     @Autowired
     private KafkaGroupsProperties groupsProperties;
 
+    @Autowired
+    private InternalTokenProperties tokenProperties;
+
+    @MockBean
+    private AdminClient adminClient;
+
+    @MockBean
+    private KafkaRecordClient recordClient;
+
     @Test
     void elContextoArranca() {
+        assertThat(tokenProperties.getInternalToken()).isEqualTo("test-token");
     }
 
     @Test

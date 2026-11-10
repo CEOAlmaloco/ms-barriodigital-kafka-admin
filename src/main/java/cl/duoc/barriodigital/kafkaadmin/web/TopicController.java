@@ -1,6 +1,7 @@
 package cl.duoc.barriodigital.kafkaadmin.web;
 
 import cl.duoc.barriodigital.kafkaadmin.service.TopicService;
+import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -38,21 +39,25 @@ public class TopicController {
 
     /** POST /api/kafka/topics — alta de un tópico del Admin. */
     @PostMapping
-    public ResponseEntity<TopicDetailView> create(@RequestBody CreateTopicRequest request) {
+    public ResponseEntity<TopicDetailView> create(@Valid @RequestBody CreateTopicRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(topicService.createTopic(request));
     }
 
     /** PATCH /api/kafka/topics/{name}/configs — cambio parcial de configuraciones. */
     @PatchMapping("/{name}/configs")
-    public TopicDetailView updateConfigs(@PathVariable String name,
-            @RequestBody UpdateTopicConfigsRequest request) {
+    public TopicDetailView updateConfigs(
+            @PathVariable String name,
+            @Valid @RequestBody UpdateTopicConfigsRequest request
+    ) {
         return topicService.updateConfigs(name, request);
     }
 
     /** PATCH /api/kafka/topics/{name}/partitions — solo aumenta particiones. */
     @PatchMapping("/{name}/partitions")
-    public TopicDetailView updatePartitions(@PathVariable String name,
-            @RequestBody UpdatePartitionsRequest request) {
+    public TopicDetailView updatePartitions(
+            @PathVariable String name,
+            @Valid @RequestBody UpdatePartitionsRequest request
+    ) {
         return topicService.updatePartitions(name, request);
     }
 

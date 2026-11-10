@@ -1,5 +1,6 @@
 package cl.duoc.barriodigital.kafkaadmin.config;
 
+import java.time.Clock;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
@@ -18,5 +19,12 @@ public class KafkaAdminConfig {
     @ConditionalOnMissingBean
     public AdminClient kafkaAdminClient(KafkaProperties kafkaProperties) {
         return AdminClient.create(kafkaProperties.buildAdminProperties());
+    }
+
+    /** Reloj UTC para los topes de tiempo del replay de DLT. */
+    @Bean
+    @ConditionalOnMissingBean
+    public Clock clock() {
+        return Clock.systemUTC();
     }
 }

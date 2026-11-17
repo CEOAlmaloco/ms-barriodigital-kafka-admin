@@ -126,8 +126,12 @@ public class KafkaAdminService {
         }
     }
 
-    /** Descripción neutral de un consumer group: estado y cantidad de miembros. */
-    public record GroupDescription(String state, int members) {
+    /** Miembro de un consumer group. */
+    public record GroupMember(String memberId, String clientId, String host) {
+    }
+
+    /** Descripción neutral de un consumer group: estado, cantidad y detalle de miembros. */
+    public record GroupDescription(String state, int members, java.util.List<GroupMember> memberDetails) {
     }
 
     /** IDs de los consumer groups que conoce el broker. */
@@ -154,8 +158,19 @@ public class KafkaAdminService {
             Map<String, org.apache.kafka.clients.admin.ConsumerGroupDescription> described =
                     result.all().get(ADMIN_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
             Map<String, GroupDescription> out = new java.util.HashMap<>();
-            described.forEach((id, d) -> out.put(id, new GroupDescription(
-                    d.state() == null ? null : d.state().name(), d.members().size())));
+            described.forEach((id, d) -> {
+                java.util.List<GroupMember> members = new java.util.ArrayList<>();
+                for (var member : d.members()) {
+                    members.add(new GroupMember(
+                            member.consumerId(),
+                            member.clientId(),
+                            member.host()));
+                }
+                out.put(id, new GroupDescription(
+                        d.state() == null ? null : d.state().name(),
+                        members.size(),
+                        java.util.List.copyOf(members)));
+            });
             return out;
         } catch (Exception e) {
             throw unavailable(e);

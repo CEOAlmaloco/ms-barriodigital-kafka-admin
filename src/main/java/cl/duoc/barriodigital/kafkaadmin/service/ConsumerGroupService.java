@@ -88,6 +88,11 @@ public class ConsumerGroupService {
         KafkaAdminService.GroupDescription d = kafkaAdminService.describeGroups(Set.of(groupId)).get(groupId);
         String state = d == null || d.state() == null ? (system ? STATE_DEAD : null) : d.state();
         int members = d == null ? 0 : d.members();
+        List<GroupDetailView.GroupMemberView> memberDetails = d == null || d.memberDetails() == null
+                ? List.of()
+                : d.memberDetails().stream()
+                        .map(m -> new GroupDetailView.GroupMemberView(m.memberId(), m.clientId(), m.host()))
+                        .toList();
 
         Map<TopicPartition, Long> committed = kafkaAdminService.committedOffsets(groupId);
         Set<String> topicNames = new java.util.LinkedHashSet<>();
@@ -108,7 +113,7 @@ public class ConsumerGroupService {
             }
             topics.add(buildTopicLag(groupId, topic, count, committed, system));
         }
-        return new GroupDetailView(groupId, state, members, system, topics);
+        return new GroupDetailView(groupId, state, members, system, memberDetails, topics);
     }
 
     /**

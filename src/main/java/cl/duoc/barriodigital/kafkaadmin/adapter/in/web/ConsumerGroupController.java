@@ -1,5 +1,10 @@
 package cl.duoc.barriodigital.kafkaadmin.adapter.in.web;
 
+import cl.duoc.barriodigital.kafkaadmin.adapter.in.web.dto.GroupDetailView;
+import cl.duoc.barriodigital.kafkaadmin.adapter.in.web.dto.GroupSummaryView;
+import cl.duoc.barriodigital.kafkaadmin.adapter.in.web.dto.ResetOffsetsRequest;
+import cl.duoc.barriodigital.kafkaadmin.adapter.in.web.dto.ResetOffsetsResponse;
+
 import cl.duoc.barriodigital.kafkaadmin.application.usecase.ConsumerGroupService;
 import jakarta.validation.Valid;
 import java.util.List;

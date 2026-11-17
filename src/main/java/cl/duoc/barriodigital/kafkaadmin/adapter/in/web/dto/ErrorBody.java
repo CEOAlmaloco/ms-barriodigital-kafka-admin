@@ -1,4 +1,4 @@
-package cl.duoc.barriodigital.kafkaadmin.adapter.in.web;
+package cl.duoc.barriodigital.kafkaadmin.adapter.in.web.dto;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;

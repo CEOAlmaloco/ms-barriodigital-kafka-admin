@@ -1,5 +1,7 @@
 package cl.duoc.barriodigital.kafkaadmin.adapter.in.web;
 
+import cl.duoc.barriodigital.kafkaadmin.adapter.in.web.dto.ErrorBody;
+
 import cl.duoc.barriodigital.kafkaadmin.domain.KafkaUnavailableException;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Map;

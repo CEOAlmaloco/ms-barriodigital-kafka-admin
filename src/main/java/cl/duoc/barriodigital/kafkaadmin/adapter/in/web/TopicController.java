@@ -1,5 +1,11 @@
 package cl.duoc.barriodigital.kafkaadmin.adapter.in.web;
 
+import cl.duoc.barriodigital.kafkaadmin.adapter.in.web.dto.CreateTopicRequest;
+import cl.duoc.barriodigital.kafkaadmin.adapter.in.web.dto.TopicDetailView;
+import cl.duoc.barriodigital.kafkaadmin.adapter.in.web.dto.TopicSummaryView;
+import cl.duoc.barriodigital.kafkaadmin.adapter.in.web.dto.UpdatePartitionsRequest;
+import cl.duoc.barriodigital.kafkaadmin.adapter.in.web.dto.UpdateTopicConfigsRequest;
+
 import cl.duoc.barriodigital.kafkaadmin.application.usecase.TopicService;
 import jakarta.validation.Valid;
 import java.util.List;

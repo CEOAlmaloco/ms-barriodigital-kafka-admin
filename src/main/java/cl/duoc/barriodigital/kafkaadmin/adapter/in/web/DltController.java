@@ -1,5 +1,9 @@
 package cl.duoc.barriodigital.kafkaadmin.adapter.in.web;
 
+import cl.duoc.barriodigital.kafkaadmin.adapter.in.web.dto.DltMessagesView;
+import cl.duoc.barriodigital.kafkaadmin.adapter.in.web.dto.DltReplayRequest;
+import cl.duoc.barriodigital.kafkaadmin.adapter.in.web.dto.DltReplayResponse;
+
 import cl.duoc.barriodigital.kafkaadmin.application.usecase.DltService;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;

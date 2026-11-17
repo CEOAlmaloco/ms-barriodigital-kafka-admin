@@ -1,4 +1,4 @@
-package cl.duoc.barriodigital.kafkaadmin.adapter.in.web;
+package cl.duoc.barriodigital.kafkaadmin.adapter.in.web.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;

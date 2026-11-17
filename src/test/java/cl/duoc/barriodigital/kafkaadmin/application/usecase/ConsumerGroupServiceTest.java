@@ -15,10 +15,10 @@ import cl.duoc.barriodigital.kafkaadmin.infrastructure.config.KafkaGroupsPropert
 import cl.duoc.barriodigital.kafkaadmin.infrastructure.config.KafkaGroupsProperties.GroupSpec;
 import cl.duoc.barriodigital.kafkaadmin.adapter.out.messaging.AuditEventFactory;
 import cl.duoc.barriodigital.kafkaadmin.adapter.out.messaging.AuditPublisher;
-import cl.duoc.barriodigital.kafkaadmin.adapter.in.web.GroupDetailView;
-import cl.duoc.barriodigital.kafkaadmin.adapter.in.web.GroupSummaryView;
-import cl.duoc.barriodigital.kafkaadmin.adapter.in.web.ResetOffsetsRequest;
-import cl.duoc.barriodigital.kafkaadmin.adapter.in.web.ResetOffsetsResponse;
+import cl.duoc.barriodigital.kafkaadmin.adapter.in.web.dto.GroupDetailView;
+import cl.duoc.barriodigital.kafkaadmin.adapter.in.web.dto.GroupSummaryView;
+import cl.duoc.barriodigital.kafkaadmin.adapter.in.web.dto.ResetOffsetsRequest;
+import cl.duoc.barriodigital.kafkaadmin.adapter.in.web.dto.ResetOffsetsResponse;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;

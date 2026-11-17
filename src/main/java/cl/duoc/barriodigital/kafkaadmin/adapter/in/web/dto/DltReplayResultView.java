@@ -1,4 +1,4 @@
-package cl.duoc.barriodigital.kafkaadmin.adapter.in.web;
+package cl.duoc.barriodigital.kafkaadmin.adapter.in.web.dto;
 
 /** Resultado de un mensaje en el replay. */
 public record DltReplayResultView(

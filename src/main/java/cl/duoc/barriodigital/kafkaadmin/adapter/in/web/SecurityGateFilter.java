@@ -1,5 +1,7 @@
 package cl.duoc.barriodigital.kafkaadmin.adapter.in.web;
 
+import cl.duoc.barriodigital.kafkaadmin.adapter.in.web.dto.ErrorBody;
+
 import cl.duoc.barriodigital.kafkaadmin.infrastructure.config.InternalTokenProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;

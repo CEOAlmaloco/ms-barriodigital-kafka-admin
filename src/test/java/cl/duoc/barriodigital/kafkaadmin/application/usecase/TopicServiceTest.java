@@ -18,10 +18,10 @@ import cl.duoc.barriodigital.kafkaadmin.infrastructure.config.KafkaTopicsPropert
 import cl.duoc.barriodigital.kafkaadmin.infrastructure.config.KafkaTopicsProperties.TopicSpec;
 import cl.duoc.barriodigital.kafkaadmin.adapter.out.messaging.AuditEventFactory;
 import cl.duoc.barriodigital.kafkaadmin.adapter.out.messaging.AuditPublisher;
-import cl.duoc.barriodigital.kafkaadmin.adapter.in.web.CreateTopicRequest;
-import cl.duoc.barriodigital.kafkaadmin.adapter.in.web.TopicDetailView;
-import cl.duoc.barriodigital.kafkaadmin.adapter.in.web.UpdatePartitionsRequest;
-import cl.duoc.barriodigital.kafkaadmin.adapter.in.web.UpdateTopicConfigsRequest;
+import cl.duoc.barriodigital.kafkaadmin.adapter.in.web.dto.CreateTopicRequest;
+import cl.duoc.barriodigital.kafkaadmin.adapter.in.web.dto.TopicDetailView;
+import cl.duoc.barriodigital.kafkaadmin.adapter.in.web.dto.UpdatePartitionsRequest;
+import cl.duoc.barriodigital.kafkaadmin.adapter.in.web.dto.UpdateTopicConfigsRequest;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;

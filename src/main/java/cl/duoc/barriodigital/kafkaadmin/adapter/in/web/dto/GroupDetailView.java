@@ -2,13 +2,18 @@ package cl.duoc.barriodigital.kafkaadmin.adapter.in.web.dto;
 
 import java.util.List;
 
-/** Detalle de un consumer group con el lag por tópico y partición. */
+/** Detalle de un consumer group con miembros y lag por tópico y partición. */
 public record GroupDetailView(
         String groupId,
         String state,
         int members,
         boolean system,
+        List<GroupMemberView> memberDetails,
         List<GroupTopicView> topics) {
+
+    /** Miembro conectado al grupo (AdminClient). */
+    public record GroupMemberView(String memberId, String clientId, String host) {
+    }
 
     /** Lag de un tópico del grupo. */
     public record GroupTopicView(String topic, List<PartitionLagView> partitions) {

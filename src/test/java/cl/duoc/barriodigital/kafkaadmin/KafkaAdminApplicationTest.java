@@ -2,10 +2,10 @@ package cl.duoc.barriodigital.kafkaadmin;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import cl.duoc.barriodigital.kafkaadmin.config.InternalTokenProperties;
-import cl.duoc.barriodigital.kafkaadmin.config.KafkaGroupsProperties;
-import cl.duoc.barriodigital.kafkaadmin.config.KafkaTopicsProperties;
-import cl.duoc.barriodigital.kafkaadmin.service.KafkaRecordClient;
+import cl.duoc.barriodigital.kafkaadmin.infrastructure.config.InternalTokenProperties;
+import cl.duoc.barriodigital.kafkaadmin.infrastructure.config.KafkaGroupsProperties;
+import cl.duoc.barriodigital.kafkaadmin.infrastructure.config.KafkaTopicsProperties;
+import cl.duoc.barriodigital.kafkaadmin.application.usecase.KafkaRecordClient;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

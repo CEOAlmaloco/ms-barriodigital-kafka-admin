@@ -87,8 +87,8 @@ class ConsumerGroupServiceTest {
         brokerTieneGrupos(
                 Set.of("report-group", "otro-grupo"),
                 Map.of(
-                        "report-group", new KafkaAdminService.GroupDescription("STABLE", 1),
-                        "otro-grupo", new KafkaAdminService.GroupDescription("EMPTY", 0)));
+                        "report-group", new KafkaAdminService.GroupDescription("STABLE", 1, java.util.List.of()),
+                        "otro-grupo", new KafkaAdminService.GroupDescription("EMPTY", 0, java.util.List.of())));
 
         List<GroupSummaryView> out = service.listGroups();
 
@@ -107,7 +107,7 @@ class ConsumerGroupServiceTest {
 
     @Test
     void elDetalleCalculaLagDesdeElOffsetConfirmado() {
-        brokerTieneGrupos(Set.of("report-group"), Map.of("report-group", new KafkaAdminService.GroupDescription("STABLE", 1)));
+        brokerTieneGrupos(Set.of("report-group"), Map.of("report-group", new KafkaAdminService.GroupDescription("STABLE", 1, java.util.List.of())));
         when(kafkaAdminService.committedOffsets("report-group"))
                 .thenReturn(Map.of(new TopicPartition("requests.events", 0), 100L, new TopicPartition("requests.events", 1), 50L));
         when(kafkaAdminService.listTopicNames()).thenReturn(Set.of("requests.events", "audit.timeline"));
@@ -131,7 +131,7 @@ class ConsumerGroupServiceTest {
 
     @Test
     void grupoDelSistemaSinOffsetMideLagDesdeElEarliest() {
-        brokerTieneGrupos(Set.of("audit-group"), Map.of("audit-group", new KafkaAdminService.GroupDescription("STABLE", 0)));
+        brokerTieneGrupos(Set.of("audit-group"), Map.of("audit-group", new KafkaAdminService.GroupDescription("STABLE", 0, java.util.List.of())));
         when(kafkaAdminService.committedOffsets("audit-group")).thenReturn(Map.of());
         when(kafkaAdminService.listTopicNames()).thenReturn(Set.of("requests.events", "audit.timeline"));
         when(kafkaAdminService.topicPartitionCounts(anyCollection()))
@@ -154,7 +154,7 @@ class ConsumerGroupServiceTest {
 
     @Test
     void otroGrupoSinOffsetEnUnaParticionDejaLagEnNull() {
-        brokerTieneGrupos(Set.of("raro"), Map.of("raro", new KafkaAdminService.GroupDescription("STABLE", 0)));
+        brokerTieneGrupos(Set.of("raro"), Map.of("raro", new KafkaAdminService.GroupDescription("STABLE", 0, java.util.List.of())));
         when(kafkaAdminService.committedOffsets("raro"))
                 .thenReturn(Map.of(new TopicPartition("requests.events", 0), 10L));
         when(kafkaAdminService.listTopicNames()).thenReturn(Set.of("requests.events"));
@@ -220,9 +220,9 @@ class ConsumerGroupServiceTest {
 
     @Test
     void resetTopicoInexistenteDa404() {
-        brokerTieneGrupos(Set.of("otro"), Map.of("otro", new KafkaAdminService.GroupDescription("STABLE", 0)));
+        brokerTieneGrupos(Set.of("otro"), Map.of("otro", new KafkaAdminService.GroupDescription("STABLE", 0, java.util.List.of())));
         when(kafkaAdminService.listTopicNames()).thenReturn(Set.of("requests.events"));
-        when(kafkaAdminService.describeGroups(Set.of("otro"))).thenReturn(Map.of("otro", new KafkaAdminService.GroupDescription("STABLE", 0)));
+        when(kafkaAdminService.describeGroups(Set.of("otro"))).thenReturn(Map.of("otro", new KafkaAdminService.GroupDescription("STABLE", 0, java.util.List.of())));
         assertThatThrownBy(() -> service.resetOffsets("otro", pedido("no.existe", "EARLIEST", null, true)))
                 .isInstanceOfSatisfying(ResponseStatusException.class,
                         e -> assertThat(e.getReason()).isEqualTo("El topico no existe"));
@@ -230,10 +230,10 @@ class ConsumerGroupServiceTest {
 
     @Test
     void resetConMiembrosActivosDa409() {
-        brokerTieneGrupos(Set.of("report-group"), Map.of("report-group", new KafkaAdminService.GroupDescription("STABLE", 2)));
+        brokerTieneGrupos(Set.of("report-group"), Map.of("report-group", new KafkaAdminService.GroupDescription("STABLE", 2, java.util.List.of())));
         when(kafkaAdminService.listTopicNames()).thenReturn(Set.of("requests.events"));
         when(kafkaAdminService.describeGroups(Set.of("report-group")))
-                .thenReturn(Map.of("report-group", new KafkaAdminService.GroupDescription("STABLE", 2)));
+                .thenReturn(Map.of("report-group", new KafkaAdminService.GroupDescription("STABLE", 2, java.util.List.of())));
         assertThatThrownBy(() -> service.resetOffsets("report-group", pedido("requests.events", "EARLIEST", null, true)))
                 .isInstanceOfSatisfying(ResponseStatusException.class,
                         e -> {
@@ -244,9 +244,9 @@ class ConsumerGroupServiceTest {
 
     @Test
     void resetDeGrupoDelSistemaFueraDeSusTopicosDa409() {
-        brokerTieneGrupos(Set.of("report-group"), Map.of("report-group", new KafkaAdminService.GroupDescription("STABLE", 0)));
+        brokerTieneGrupos(Set.of("report-group"), Map.of("report-group", new KafkaAdminService.GroupDescription("STABLE", 0, java.util.List.of())));
         when(kafkaAdminService.describeGroups(Set.of("report-group")))
-                .thenReturn(Map.of("report-group", new KafkaAdminService.GroupDescription("STABLE", 0)));
+                .thenReturn(Map.of("report-group", new KafkaAdminService.GroupDescription("STABLE", 0, java.util.List.of())));
         when(kafkaAdminService.listTopicNames()).thenReturn(Set.of("requests.events", "audit.timeline"));
         assertThatThrownBy(() -> service.resetOffsets("report-group", pedido("audit.timeline", "EARLIEST", null, true)))
                 .isInstanceOfSatisfying(ResponseStatusException.class,
@@ -258,9 +258,9 @@ class ConsumerGroupServiceTest {
 
     @Test
     void resetDeOtroGrupoSinOffsetsConfirmadosDa409() {
-        brokerTieneGrupos(Set.of("otro"), Map.of("otro", new KafkaAdminService.GroupDescription("STABLE", 0)));
+        brokerTieneGrupos(Set.of("otro"), Map.of("otro", new KafkaAdminService.GroupDescription("STABLE", 0, java.util.List.of())));
         when(kafkaAdminService.describeGroups(Set.of("otro")))
-                .thenReturn(Map.of("otro", new KafkaAdminService.GroupDescription("STABLE", 0)));
+                .thenReturn(Map.of("otro", new KafkaAdminService.GroupDescription("STABLE", 0, java.util.List.of())));
         when(kafkaAdminService.listTopicNames()).thenReturn(Set.of("requests.events"));
         when(kafkaAdminService.committedOffsets("otro")).thenReturn(Map.of());
         assertThatThrownBy(() -> service.resetOffsets("otro", pedido("requests.events", "EARLIEST", null, true)))
@@ -274,9 +274,9 @@ class ConsumerGroupServiceTest {
     // ---------- restricciones de grupos del sistema ----------
 
     private void grupoSistemaSinMiembros() {
-        brokerTieneGrupos(Set.of("report-group"), Map.of("report-group", new KafkaAdminService.GroupDescription("STABLE", 0)));
+        brokerTieneGrupos(Set.of("report-group"), Map.of("report-group", new KafkaAdminService.GroupDescription("STABLE", 0, java.util.List.of())));
         when(kafkaAdminService.describeGroups(Set.of("report-group")))
-                .thenReturn(Map.of("report-group", new KafkaAdminService.GroupDescription("STABLE", 0)));
+                .thenReturn(Map.of("report-group", new KafkaAdminService.GroupDescription("STABLE", 0, java.util.List.of())));
         topicoRequestsEvents(2);
     }
 
@@ -387,9 +387,9 @@ class ConsumerGroupServiceTest {
 
     @Test
     void otroGrupoPermiteLatest() {
-        brokerTieneGrupos(Set.of("otro"), Map.of("otro", new KafkaAdminService.GroupDescription("STABLE", 0)));
+        brokerTieneGrupos(Set.of("otro"), Map.of("otro", new KafkaAdminService.GroupDescription("STABLE", 0, java.util.List.of())));
         when(kafkaAdminService.describeGroups(Set.of("otro")))
-                .thenReturn(Map.of("otro", new KafkaAdminService.GroupDescription("STABLE", 0)));
+                .thenReturn(Map.of("otro", new KafkaAdminService.GroupDescription("STABLE", 0, java.util.List.of())));
         when(kafkaAdminService.listTopicNames()).thenReturn(Set.of("requests.events"));
         when(kafkaAdminService.topicPartitionCounts(anyCollection())).thenReturn(Map.of("requests.events", 1));
         when(kafkaAdminService.committedOffsets("otro")).thenReturn(Map.of(new TopicPartition("requests.events", 0), 10L));

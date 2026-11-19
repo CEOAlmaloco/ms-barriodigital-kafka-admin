@@ -24,4 +24,6 @@ jobs:
           java-version: "21"
           cache: maven
       - name: Unit tests
-        run: ./mvnw -B -q test
+        run: |
+          chmod +x ./mvnw
+          ./mvnw -B -q test

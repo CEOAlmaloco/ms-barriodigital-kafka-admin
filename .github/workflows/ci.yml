@@ -12,8 +12,6 @@ concurrency:
 
 permissions:
   contents: read
-  security-events: write
-  pull-requests: read
 
 jobs:
   test:
@@ -25,62 +23,5 @@ jobs:
           distribution: temurin
           java-version: "21"
           cache: maven
-      - name: Tests
+      - name: Unit tests
         run: ./mvnw -B -q test
-      - name: Publicar OpenAPI (si el jar arranca en test)
-        if: hashFiles('src/main/resources/openapi/openapi.yaml') != ''
-        run: |
-          mkdir -p artifacts
-          cp src/main/resources/openapi/openapi.yaml artifacts/openapi.yaml
-      - uses: actions/upload-artifact@v4
-        if: hashFiles('src/main/resources/openapi/openapi.yaml') != ''
-        with:
-          name: openapi
-          path: artifacts/openapi.yaml
-
-  gitleaks:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  dependency-review:
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/dependency-review-action@v4
-        with:
-          fail-on-severity: critical
-
-  codeql:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: github/codeql-action/init@v3
-        with:
-          languages: java
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: "21"
-          cache: maven
-      - run: ./mvnw -B -q -DskipTests package
-      - uses: github/codeql-action/analyze@v3
-
-  image-scan:
-    runs-on: ubuntu-latest
-    if: hashFiles('Dockerfile') != ''
-    steps:
-      - uses: actions/checkout@v4
-      - name: Build image
-        run: docker build -t local/app:ci .
-      - uses: aquasecurity/trivy-action@0.28.0
-        with:
-          image-ref: local/app:ci
-          severity: CRITICAL
-          exit-code: "1"

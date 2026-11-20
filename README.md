@@ -4,11 +4,9 @@ Administración de topics y consumer groups de Kafka de **BarrioDigital**.
 
 Puerto: **8085**
 
-
-<!-- EP3.5-01 contratos -->
 ## Contratos
 
-Contratos vigentes en `barriodigital-infra` (EP3.5-01). Índice: [docs/contratos](https://github.com/CEOAlmaloco/barriodigital-infra/blob/develop/docs/contratos/README.md).
+Contratos vigentes en `barriodigital-infra` ([índice](https://github.com/CEOAlmaloco/barriodigital-infra/blob/develop/docs/contratos/README.md)):
 
 - [API kafka-admin](https://github.com/CEOAlmaloco/barriodigital-infra/blob/develop/docs/contratos/kafka-admin.md)
 - [Tópicos](https://github.com/CEOAlmaloco/barriodigital-infra/blob/develop/docs/contratos/kafka-topicos.md)

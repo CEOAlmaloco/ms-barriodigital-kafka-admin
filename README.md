@@ -4,6 +4,13 @@ Administración de topics y consumer groups de Kafka de **BarrioDigital**.
 
 Puerto: **8085**
 
+## Contratos
+
+Contratos vigentes en `barriodigital-infra` ([índice](https://github.com/CEOAlmaloco/barriodigital-infra/blob/develop/docs/contratos/README.md)):
+
+- [API kafka-admin](https://github.com/CEOAlmaloco/barriodigital-infra/blob/develop/docs/contratos/kafka-admin.md)
+- [Tópicos](https://github.com/CEOAlmaloco/barriodigital-infra/blob/develop/docs/contratos/kafka-topicos.md)
+
 ## Arranque
 
 El cluster de Kafka tiene que estar levantado. Este servicio no lo incluye; en local se espera un broker en `localhost:9092` y en EC2 el cluster de EC2-Kafka.

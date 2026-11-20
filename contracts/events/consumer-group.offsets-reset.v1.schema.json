@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "consumer-group.offsets-reset v1",
+  "allOf": [
+    {
+      "$ref": "envelope.schema.json"
+    }
+  ],
+  "properties": {
+    "eventType": {
+      "const": "consumer-group.offsets-reset"
+    },
+    "schemaVersion": {
+      "const": 1
+    },
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "resourceType",
+        "resourceId",
+        "action",
+        "before",
+        "after"
+      ],
+      "properties": {
+        "resourceType": {
+          "const": "consumer-group"
+        },
+        "resourceId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "action": {
+          "const": "offsets-reset"
+        },
+        "before": {
+          "type": "object"
+        },
+        "after": {
+          "type": "object"
+        }
+      }
+    }
+  },
+  "unevaluatedProperties": false
+}

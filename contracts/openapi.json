@@ -1,0 +1,857 @@
+{
+  "openapi" : "3.0.1",
+  "info" : {
+    "title" : "ms-barriodigital-kafka-admin",
+    "version" : "1"
+  },
+  "paths" : {
+    "/api/kafka/consumer-groups" : {
+      "get" : {
+        "operationId" : "list_2",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/GroupSummaryView"
+                  }
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "consumer-group-controller" ]
+      }
+    },
+    "/api/kafka/consumer-groups/{groupId}" : {
+      "get" : {
+        "operationId" : "detail_1",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "groupId",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/GroupDetailView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "consumer-group-controller" ]
+      }
+    },
+    "/api/kafka/consumer-groups/{groupId}/offsets/reset" : {
+      "post" : {
+        "operationId" : "reset",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "groupId",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ResetOffsetsRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ResetOffsetsResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "consumer-group-controller" ]
+      }
+    },
+    "/api/kafka/dlt/{name}/messages" : {
+      "get" : {
+        "operationId" : "list_1",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "name",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "partition",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }, {
+          "in" : "query",
+          "name" : "fromOffset",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        }, {
+          "in" : "query",
+          "name" : "limit",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DltMessagesView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "dlt-controller" ]
+      }
+    },
+    "/api/kafka/dlt/{name}/replay" : {
+      "post" : {
+        "operationId" : "replay",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "name",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/DltReplayRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DltReplayResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "dlt-controller" ]
+      }
+    },
+    "/api/kafka/topics" : {
+      "get" : {
+        "operationId" : "list",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/TopicSummaryView"
+                  }
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "topic-controller" ]
+      },
+      "post" : {
+        "operationId" : "create",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CreateTopicRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TopicDetailView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "topic-controller" ]
+      }
+    },
+    "/api/kafka/topics/{name}" : {
+      "delete" : {
+        "operationId" : "delete",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "name",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "topic-controller" ]
+      },
+      "get" : {
+        "operationId" : "detail",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "name",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TopicDetailView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "topic-controller" ]
+      }
+    },
+    "/api/kafka/topics/{name}/configs" : {
+      "patch" : {
+        "operationId" : "updateConfigs",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "name",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UpdateTopicConfigsRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TopicDetailView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "topic-controller" ]
+      }
+    },
+    "/api/kafka/topics/{name}/partitions" : {
+      "patch" : {
+        "operationId" : "updatePartitions",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "name",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UpdatePartitionsRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TopicDetailView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "topic-controller" ]
+      }
+    }
+  },
+  "components" : {
+    "schemas" : {
+      "ConfigView" : {
+        "type" : "object",
+        "properties" : {
+          "editable" : {
+            "type" : "boolean"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "source" : {
+            "type" : "string"
+          },
+          "value" : {
+            "type" : "string"
+          }
+        }
+      },
+      "CreateTopicRequest" : {
+        "type" : "object",
+        "description" : "Alta de un topico del Admin",
+        "properties" : {
+          "configs" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string",
+              "example" : "{\"retention.ms\":\"604800000\",\"cleanup.policy\":\"delete\"}"
+            },
+            "example" : {
+              "cleanup.policy" : "delete",
+              "retention.ms" : "604800000"
+            }
+          },
+          "name" : {
+            "pattern" : "^[A-Za-z0-9._-]{1,249}$",
+            "type" : "string",
+            "example" : "demo.events"
+          },
+          "partitions" : {
+            "maximum" : 12,
+            "minimum" : 1,
+            "type" : "integer",
+            "format" : "int32",
+            "example" : 3
+          },
+          "replicationFactor" : {
+            "maximum" : 3,
+            "minimum" : 1,
+            "type" : "integer",
+            "format" : "int32",
+            "example" : 3
+          }
+        },
+        "required" : [ "name", "partitions", "replicationFactor" ]
+      },
+      "DltMessageView" : {
+        "type" : "object",
+        "properties" : {
+          "consumerGroup" : {
+            "type" : "string"
+          },
+          "eventId" : {
+            "type" : "string"
+          },
+          "eventType" : {
+            "type" : "string"
+          },
+          "exceptionCause" : {
+            "type" : "string"
+          },
+          "exceptionClass" : {
+            "type" : "string"
+          },
+          "exceptionMessage" : {
+            "type" : "string"
+          },
+          "key" : {
+            "type" : "string"
+          },
+          "offset" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "originalOffset" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "originalPartition" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "originalTimestamp" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "originalTopic" : {
+            "type" : "string"
+          },
+          "partition" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "receivedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "value" : {
+            "type" : "string"
+          }
+        }
+      },
+      "DltMessagesView" : {
+        "type" : "object",
+        "properties" : {
+          "dlt" : {
+            "type" : "string"
+          },
+          "partitions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/DltPartitionView"
+            }
+          }
+        }
+      },
+      "DltPartitionView" : {
+        "type" : "object",
+        "properties" : {
+          "messages" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/DltMessageView"
+            }
+          },
+          "nextOffset" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "partition" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
+      "DltReplayRequest" : {
+        "type" : "object",
+        "description" : "Replay selectivo: offsets o eventIds, uno de los dos",
+        "properties" : {
+          "eventIds" : {
+            "maxItems" : 100,
+            "minItems" : 0,
+            "type" : "array",
+            "example" : [ "9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d" ],
+            "items" : {
+              "type" : "string",
+              "example" : "[\"9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d\"]"
+            }
+          },
+          "offsets" : {
+            "maxItems" : 100,
+            "minItems" : 0,
+            "type" : "array",
+            "example" : [ {
+              "offset" : 2040,
+              "partition" : 1
+            } ],
+            "items" : {
+              "$ref" : "#/components/schemas/OffsetRef"
+            }
+          }
+        }
+      },
+      "DltReplayResponse" : {
+        "type" : "object",
+        "properties" : {
+          "dlt" : {
+            "type" : "string"
+          },
+          "failed" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "notAttempted" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "resent" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "results" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/DltReplayResultView"
+            }
+          },
+          "skipped" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "targetTopic" : {
+            "type" : "string"
+          }
+        }
+      },
+      "DltReplayResultView" : {
+        "type" : "object",
+        "properties" : {
+          "eventId" : {
+            "type" : "string"
+          },
+          "offset" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "partition" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "reason" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          }
+        }
+      },
+      "GroupDetailView" : {
+        "type" : "object",
+        "properties" : {
+          "groupId" : {
+            "type" : "string"
+          },
+          "memberDetails" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/GroupMemberView"
+            }
+          },
+          "members" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "state" : {
+            "type" : "string"
+          },
+          "system" : {
+            "type" : "boolean"
+          },
+          "topics" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/GroupTopicView"
+            }
+          }
+        }
+      },
+      "GroupMemberView" : {
+        "type" : "object",
+        "properties" : {
+          "clientId" : {
+            "type" : "string"
+          },
+          "host" : {
+            "type" : "string"
+          },
+          "memberId" : {
+            "type" : "string"
+          }
+        }
+      },
+      "GroupSummaryView" : {
+        "type" : "object",
+        "properties" : {
+          "groupId" : {
+            "type" : "string"
+          },
+          "members" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "state" : {
+            "type" : "string"
+          },
+          "system" : {
+            "type" : "boolean"
+          }
+        }
+      },
+      "GroupTopicView" : {
+        "type" : "object",
+        "properties" : {
+          "partitions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/PartitionLagView"
+            }
+          },
+          "topic" : {
+            "type" : "string"
+          }
+        }
+      },
+      "OffsetRef" : {
+        "type" : "object",
+        "example" : [ {
+          "partition" : 1,
+          "offset" : 2040
+        } ],
+        "properties" : {
+          "offset" : {
+            "type" : "integer",
+            "format" : "int64",
+            "example" : 2040
+          },
+          "partition" : {
+            "type" : "integer",
+            "format" : "int32",
+            "example" : 1
+          }
+        }
+      },
+      "PartitionLagView" : {
+        "type" : "object",
+        "properties" : {
+          "committedOffset" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "endOffset" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "lag" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "lagBasis" : {
+            "type" : "string"
+          },
+          "partition" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
+      "PartitionResetView" : {
+        "type" : "object",
+        "properties" : {
+          "currentOffset" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "lagAfter" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "partition" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "targetOffset" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        }
+      },
+      "PartitionView" : {
+        "type" : "object",
+        "properties" : {
+          "isr" : {
+            "type" : "array",
+            "items" : {
+              "type" : "integer",
+              "format" : "int32"
+            }
+          },
+          "leader" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "partition" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "replicas" : {
+            "type" : "array",
+            "items" : {
+              "type" : "integer",
+              "format" : "int32"
+            }
+          }
+        }
+      },
+      "ResetOffsetsRequest" : {
+        "type" : "object",
+        "description" : "Reset de offsets de un consumer group",
+        "properties" : {
+          "dryRun" : {
+            "type" : "boolean",
+            "example" : true
+          },
+          "strategy" : {
+            "type" : "string",
+            "example" : "EARLIEST"
+          },
+          "timestamp" : {
+            "type" : "string",
+            "format" : "date-time",
+            "example" : "2026-11-10T00:00:00Z"
+          },
+          "topic" : {
+            "type" : "string",
+            "example" : "requests.events"
+          }
+        },
+        "required" : [ "dryRun", "topic" ]
+      },
+      "ResetOffsetsResponse" : {
+        "type" : "object",
+        "properties" : {
+          "dryRun" : {
+            "type" : "boolean"
+          },
+          "groupId" : {
+            "type" : "string"
+          },
+          "partitions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/PartitionResetView"
+            }
+          },
+          "strategy" : {
+            "type" : "string"
+          },
+          "topic" : {
+            "type" : "string"
+          }
+        }
+      },
+      "TopicDetailView" : {
+        "type" : "object",
+        "properties" : {
+          "configs" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ConfigView"
+            }
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "partitions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/PartitionView"
+            }
+          },
+          "system" : {
+            "type" : "boolean"
+          }
+        }
+      },
+      "TopicSummaryView" : {
+        "type" : "object",
+        "properties" : {
+          "name" : {
+            "type" : "string"
+          },
+          "partitions" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "replicationFactor" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "system" : {
+            "type" : "boolean"
+          }
+        }
+      },
+      "UpdatePartitionsRequest" : {
+        "type" : "object",
+        "description" : "Nuevo total de particiones (solo puede aumentar)",
+        "properties" : {
+          "partitions" : {
+            "maximum" : 12,
+            "minimum" : 1,
+            "type" : "integer",
+            "format" : "int32",
+            "example" : 6
+          }
+        },
+        "required" : [ "partitions" ]
+      },
+      "UpdateTopicConfigsRequest" : {
+        "type" : "object",
+        "description" : "Cambio parcial de configuraciones editables",
+        "properties" : {
+          "configs" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string",
+              "example" : "{\"retention.ms\":\"259200000\"}"
+            },
+            "example" : {
+              "retention.ms" : "259200000"
+            }
+          }
+        },
+        "required" : [ "configs" ]
+      }
+    }
+  }
+}

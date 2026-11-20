@@ -9,6 +9,7 @@ import io.swagger.v3.oas.models.info.Info;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springdoc.core.configuration.SpringDocConfiguration;
+import org.springdoc.core.configuration.SpringDocSecurityConfiguration;
 import org.springdoc.core.properties.SpringDocConfigProperties;
 import org.springdoc.webmvc.core.configuration.SpringDocWebMvcConfiguration;
 import org.springframework.beans.factory.ObjectProvider;
@@ -28,6 +29,7 @@ import java.lang.reflect.Constructor;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -48,6 +50,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ImportAutoConfiguration({
         SpringDocConfiguration.class,
         SpringDocConfigProperties.class,
+        SpringDocSecurityConfiguration.class,
         SpringDocWebMvcConfiguration.class
 })
 @Import({OpenApiContractTest.ContractInfo.class, OpenApiContractTest.MockMissingDependencies.class})
@@ -66,6 +69,7 @@ class OpenApiContractTest {
                 .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
         ObjectNode generated = (ObjectNode) JSON.readTree(body);
         generated.remove("servers");
+        stableOperationIds(generated);
 
         if (Boolean.getBoolean("openapi.update")) {
             Files.createDirectories(CONTRACT.getParent());
@@ -74,6 +78,26 @@ class OpenApiContractTest {
         JsonNode published = JSON.readTree(Files.readString(CONTRACT, StandardCharsets.UTF_8));
         assertEquals(published, generated, "Los controladores ya no coinciden con " + CONTRACT
                 + ". Revisa el cambio y regenera el contrato con -Dopenapi.update=true.");
+    }
+
+    /**
+     * springdoc numera al azar los operationId repetidos (proxy_21, proxy_26). Esos se reemplazan por uno único y
+     * estable armado con el método y la ruta.
+     */
+    private static void stableOperationIds(ObjectNode spec) {
+        Map<String, Integer> uses = new HashMap<>();
+        spec.path("paths").forEach(path -> path.forEach(operation ->
+                uses.merge(baseOperationId(operation), 1, Integer::sum)));
+        spec.path("paths").fields().forEachRemaining(path -> path.getValue().fields().forEachRemaining(operation -> {
+            if (operation.getValue() instanceof ObjectNode node && uses.get(baseOperationId(node)) > 1) {
+                String route = path.getKey().replaceAll("[^A-Za-z0-9]+", "_").replaceAll("^_|_$", "");
+                node.put("operationId", operation.getKey() + "_" + route);
+            }
+        }));
+    }
+
+    private static String baseOperationId(JsonNode operation) {
+        return operation.path("operationId").asText().replaceFirst("_\\d+$", "");
     }
 
     @TestConfiguration

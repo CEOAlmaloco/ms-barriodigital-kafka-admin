@@ -7,7 +7,7 @@
   "paths" : {
     "/api/kafka/consumer-groups" : {
       "get" : {
-        "operationId" : "list_2",
+        "operationId" : "get_api_kafka_consumer_groups",
         "responses" : {
           "200" : {
             "content" : {
@@ -28,7 +28,7 @@
     },
     "/api/kafka/consumer-groups/{groupId}" : {
       "get" : {
-        "operationId" : "detail_1",
+        "operationId" : "get_api_kafka_consumer_groups_groupId",
         "parameters" : [ {
           "in" : "path",
           "name" : "groupId",
@@ -90,7 +90,7 @@
     },
     "/api/kafka/dlt/{name}/messages" : {
       "get" : {
-        "operationId" : "list_1",
+        "operationId" : "get_api_kafka_dlt_name_messages",
         "parameters" : [ {
           "in" : "path",
           "name" : "name",
@@ -176,7 +176,7 @@
     },
     "/api/kafka/topics" : {
       "get" : {
-        "operationId" : "list",
+        "operationId" : "get_api_kafka_topics",
         "responses" : {
           "200" : {
             "content" : {
@@ -240,7 +240,7 @@
         "tags" : [ "topic-controller" ]
       },
       "get" : {
-        "operationId" : "detail",
+        "operationId" : "get_api_kafka_topics_name",
         "parameters" : [ {
           "in" : "path",
           "name" : "name",

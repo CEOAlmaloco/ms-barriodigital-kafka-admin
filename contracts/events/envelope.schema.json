@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Sobre de audit.timeline (kafka-admin)",
+  "description": "Campos comunes de los eventos de audit.timeline: sin sequence y con actor.sourceIp.",
+  "type": "object",
+  "required": [
+    "eventId",
+    "eventType",
+    "schemaVersion",
+    "occurredAt",
+    "producer",
+    "traceId",
+    "actor",
+    "payload"
+  ],
+  "properties": {
+    "eventId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "eventType": {
+      "type": "string",
+      "minLength": 1
+    },
+    "schemaVersion": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "occurredAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "producer": {
+      "const": "kafka-admin"
+    },
+    "traceId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "actor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "role",
+        "sourceIp"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "role": {
+          "enum": [
+            "Admin",
+            "Funcionario",
+            "Vecino",
+            "Auditor"
+          ]
+        },
+        "sourceIp": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "payload": {
+      "type": "object"
+    }
+  }
+}

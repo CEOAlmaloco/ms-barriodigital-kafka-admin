@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "topic.dlt-replayed v1",
+  "allOf": [
+    {
+      "$ref": "envelope.schema.json"
+    }
+  ],
+  "properties": {
+    "eventType": {
+      "const": "topic.dlt-replayed"
+    },
+    "schemaVersion": {
+      "const": 1
+    },
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "resourceType",
+        "resourceId",
+        "action",
+        "before",
+        "after"
+      ],
+      "properties": {
+        "resourceType": {
+          "const": "topic"
+        },
+        "resourceId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "action": {
+          "const": "dlt-replayed"
+        },
+        "before": {
+          "type": "null"
+        },
+        "after": {
+          "type": "object"
+        }
+      }
+    }
+  },
+  "unevaluatedProperties": false
+}
